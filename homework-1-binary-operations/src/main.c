@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include "lib.h"
 
+#define BUF_SIZE 40
+
 int main(int argc, char** argv) {
-    char buf[40];
+    char buf[BUF_SIZE];
 
     if (argc < 2) {
         printf("USAGE: main [1-4]\n");

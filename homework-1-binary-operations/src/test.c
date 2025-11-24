@@ -3,9 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#define BUF_SIZE 128
 #define MEMSET_INIT_BYTE 0xAA
 
-static char output[128];
+
+static char output[BUF_SIZE];
 static const char *expected;
 
 void setUp(void) {
