@@ -30,4 +30,4 @@ $(OBJDIR)/%.o: %.c | $(OBJDIR)
 
 .PHONY : clean
 clean:
-	rm -rf bin obj
+	rm -rf $(BINDIR) $(OBJDIR)
