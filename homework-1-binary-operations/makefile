@@ -14,9 +14,9 @@ VPATH := $(SRCDIR):$(UNITYDIR)
 all: main tests
 
 main: $(OBJMAIN) | $(BINDIR)
-	$(CC) $(CFLAGS) $(OBJMAIN) -o bin/main
+	$(CC) $(CFLAGS) $(OBJMAIN) -o $(BINDIR)/main
 tests: $(OBJTEST) | $(BINDIR)
-	$(CC) $(CFLAGS) $(OBJTEST) -o bin/test
+	$(CC) $(CFLAGS) $(OBJTEST) -o $(BINDIR)/test
 
 $(BINDIR):
 	mkdir $(BINDIR)
