@@ -23,8 +23,8 @@ int main(int argc, char** argv) {
 
                 size_t length = n * n;
                 uint32_t *arr = (uint32_t*)malloc(length * sizeof(uint32_t));
-                fill_array(arr, length);
 
+                fill_array(arr, length);
                 print_matrix(arr, n, n);
 
                 free(arr);
@@ -39,10 +39,27 @@ int main(int argc, char** argv) {
                 scanf("%zu", &length);
 
                 uint32_t *arr = (uint32_t*)malloc(length * sizeof(uint32_t));
+
                 fill_array(arr, length);
                 reverse_array(arr, length);
-
                 print_array(arr, length);
+
+                free(arr);
+            }
+        case 3:
+            printf("Введите целое неотрицательное число, чтобы задать размер квадратной матрицы:\n\n");
+            while (1) {
+                printf("> ");
+                fflush(stdout);
+
+                size_t n;
+                scanf("%zu", &n);
+
+                size_t length = n * n;
+                uint32_t *arr = (uint32_t*)malloc(length * sizeof(uint32_t));
+
+                fill_triangle_matrix(arr, n);
+                print_matrix(arr, n, n);
 
                 free(arr);
             }

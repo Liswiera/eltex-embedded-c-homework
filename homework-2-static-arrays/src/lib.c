@@ -39,3 +39,11 @@ void reverse_array(uint32_t *arr, size_t length) {
         swap_u32(arr + i, arr + j);
     }
 }
+
+void fill_triangle_matrix(uint32_t *arr, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            arr[i * n + j] = (i + j < n - 1) ? 0 : 1;
+        }
+    }
+}
