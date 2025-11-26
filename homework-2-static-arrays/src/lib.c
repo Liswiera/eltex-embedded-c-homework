@@ -47,3 +47,36 @@ void fill_triangle_matrix(uint32_t *arr, size_t n) {
         }
     }
 }
+
+void fill_spiral_matrix(uint32_t *arr, size_t n) {
+    size_t side_length = n - 1;
+    size_t iteration_count = n / 2;
+    size_t value = 0;
+    size_t i = 0, j = 0;
+    for (size_t iter_id = 0; iter_id < iteration_count; iter_id++) {
+        for (size_t k = 0; k < side_length; k++) {
+            arr[i * n + j] = ++value;
+            j++;
+        }
+        for (size_t k = 0; k < side_length; k++) {
+            arr[i * n + j] = ++value;
+            i++;
+        }
+        for (size_t k = 0; k < side_length; k++) {
+            arr[i * n + j] = ++value;
+            j--;
+        }
+        for (size_t k = 0; k < side_length; k++) {
+            arr[i * n + j] = ++value;
+            i--;
+        }
+
+        i++;
+        j++;
+        side_length -= 2;
+    }
+
+    if (n % 2 == 1) {
+        arr[i * n + j] = ++value;
+    }
+}
