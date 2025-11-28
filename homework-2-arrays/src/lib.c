@@ -35,6 +35,8 @@ static void swap_u32(uint32_t *left, uint32_t *right) {
 }
 
 void reverse_array(uint32_t *arr, size_t length) {
+    if (length == 0) return;
+
     for (size_t i = 0, j = length - 1; i < j; i++, j--) {
         swap_u32(arr + i, arr + j);
     }
