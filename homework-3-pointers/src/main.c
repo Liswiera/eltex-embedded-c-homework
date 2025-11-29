@@ -3,6 +3,19 @@
 #include <stdlib.h>
 #include "lib.h"
 
+// 2. В приведенном ниже коде измените только одну строку (помеченную), чтобы напечатать “Результат: 12.0”.
+void task_2(void) {
+    float x = 5.0;
+    printf("x = %f, ", x);
+    float y = 6.0;
+    printf("y = %f\n", y);
+
+    // float *xp = &x; // TODO: отредактируйте эту строку, и только правую часть уравнения
+    float *xp = &y;
+    float *yp = &y;
+    printf("Результат: %f\n", *xp + *yp);
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         printf("USAGE: main [1-4]\n");
@@ -25,6 +38,9 @@ int main(int argc, char** argv) {
                 uint32_t new_value = uint32_set_byte_2(value, new_byte);
                 printf("%" PRIu32 " => %" PRIu32 "\n\n", value, new_value);
             }
+        case 2:
+            task_2();
+            break;
         default:
             printf("Неправильный номер задания (число должно быть от 1 до 4)\n");
             return 2;
