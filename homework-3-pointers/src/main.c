@@ -11,7 +11,7 @@ void task_2(void) {
     printf("y = %f\n", y);
 
     // float *xp = &x; // TODO: отредактируйте эту строку, и только правую часть уравнения
-    float *xp = &y;
+    float *xp = &y; // Новая строка
     float *yp = &y;
     printf("Результат: %f\n", *xp + *yp);
 }
@@ -40,6 +40,12 @@ int main(int argc, char** argv) {
             }
         case 2:
             task_2();
+            break;
+        case 3:
+            uint32_t arr[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            size_t length = sizeof(arr) / sizeof(uint32_t);
+
+            print_array(arr, length);
             break;
         default:
             printf("Неправильный номер задания (число должно быть от 1 до 4)\n");
