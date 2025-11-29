@@ -15,3 +15,28 @@ uint32_t uint32_set_byte_2(uint32_t value, uint8_t new_byte) {
 
     return value;
 }
+
+const char* find_substr_naive(const char *text, const char *pattern) {
+    size_t pattern_len = strlen(pattern);
+
+    const char *text_start = text;
+    const char *text_end = text + strlen(text);
+    for (; text_start + pattern_len <= text_end; text_start++) {
+        int found = 1;
+
+        const char* text_pos = text_start;
+        const char* pat_pos = pattern;
+        for (; *pat_pos != '\0'; text_pos++, pat_pos++) {
+            if (*text_pos != *pat_pos) {
+                found = 0;
+                break;
+            }
+        }
+
+        if (found) {
+            return text_start;
+        }
+    }
+
+    return NULL;
+}

@@ -3,8 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 
+size_t expected_id;
 
-void setUp(void) { }
+void setUp(void) {
+    expected_id = 0x19194242;
+}
 
 void tearDown(void) { }
 
@@ -26,6 +29,67 @@ void test_set_rewrite_byte(void) {
 }
 
 
+void expect_null(const char* text, const char* pattern) {
+    const char* pos = find_substr_naive(text, pattern);
+
+    TEST_ASSERT_EQUAL_PTR(NULL, pos);
+}
+
+void expect(size_t e) {
+    expected_id = e;
+}
+
+void given(const char* text, const char* pattern) {
+    const char* pos = find_substr_naive(text, pattern);
+    size_t id = (size_t)(pos - text);
+
+    TEST_ASSERT_EQUAL_size_t(expected_id, id);
+}
+
+void test_find_substr_naive_both_empty(void) {
+    expect(0);
+    given("", "");
+}
+
+void test_find_substr_naive_text_empty(void) {
+    expect_null("", "p");
+}
+
+void test_find_substr_naive_pattern_empty(void) {
+    expect(0);
+    given("Hello World", "");
+}
+
+void test_find_substr_naive_equal(void) {
+    expect(0);
+    given("Hello World", "Hello World");
+}
+
+void test_find_substr_naive_at_0(void) {
+    expect(0);
+    given("Hello World", "Hello");
+}
+
+void test_find_substr_naive_one_match(void) {
+    expect(6);
+    given("Hello World! This is a text.", "World");
+}
+
+void test_find_substr_naive_multiple_matches(void) {
+    expect(6);
+    given("Hello WorldWorldWorldWorld", "World");
+}
+
+void test_find_substr_naive_tricky(void) {
+    expect(8);
+    given("abacabadabacabadezzz", "abacabade");
+}
+
+void test_find_substr_naive_optimized_example(void) {
+    expect_null("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaz");
+}
+
+
 int main(void) {
     UNITY_BEGIN();
 
@@ -33,6 +97,15 @@ int main(void) {
     RUN_TEST(test_set_byte_zero_byte);
     RUN_TEST(test_set_no_change);
     RUN_TEST(test_set_rewrite_byte);
+
+    RUN_TEST(test_find_substr_naive_both_empty);
+    RUN_TEST(test_find_substr_naive_text_empty);
+    RUN_TEST(test_find_substr_naive_pattern_empty);
+    RUN_TEST(test_find_substr_naive_equal);
+    RUN_TEST(test_find_substr_naive_at_0);
+    RUN_TEST(test_find_substr_naive_one_match);
+    RUN_TEST(test_find_substr_naive_tricky);
+    RUN_TEST(test_find_substr_naive_optimized_example);
 
     return UNITY_END();
 }

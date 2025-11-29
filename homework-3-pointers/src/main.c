@@ -1,7 +1,11 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "lib.h"
+
+#define STR_LIMIT 128
+#define SCN_STR_LIMIT "128"
 
 // 2. В приведенном ниже коде измените только одну строку (помеченную), чтобы напечатать “Результат: 12.0”.
 void task_2(void) {
@@ -14,6 +18,17 @@ void task_2(void) {
     float *xp = &y; // Новая строка
     float *yp = &y;
     printf("Результат: %f\n", *xp + *yp);
+}
+
+static void read_string(char *str) {
+    printf("> ");
+    fflush(stdout);
+
+    int arg_read_count = scanf("%" SCN_STR_LIMIT "[^\n]", str);
+    if (arg_read_count == 0) {
+        *str = '\0';
+    }
+    getchar();
 }
 
 int main(int argc, char** argv) {
@@ -47,6 +62,25 @@ int main(int argc, char** argv) {
 
             print_array(arr, length);
             break;
+        case 4:
+            printf("Введите две строки, чтобы найти первое вхождение второй подстроки в первой строке.\n\n");
+
+            char text[STR_LIMIT + 1];
+            char pattern[STR_LIMIT + 1];
+            while (1) {
+                read_string(text);
+                read_string(pattern);
+
+                const char* substr = find_substr_naive(text, pattern);
+                if (substr) {
+                    size_t pos = (size_t)(substr - text);
+                    printf("Найдена подстрока по индексу %zu.\n", pos);
+                }
+                else {
+                    printf("Подстрока не найдена.\n");
+                }
+                printf("\n");
+            }
         default:
             printf("Неправильный номер задания (число должно быть от 1 до 4)\n");
             return 2;
