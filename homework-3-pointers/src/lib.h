@@ -2,7 +2,6 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include <string.h>
 
 
 // 1. Поменять в целом положительном числе (типа int) значение третьего байта

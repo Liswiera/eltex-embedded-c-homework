@@ -1,6 +1,5 @@
 #include "../../unity/unity.h"
 #include "lib.h"
-#include <string.h>
 #include <stdio.h>
 
 size_t expected_id;
