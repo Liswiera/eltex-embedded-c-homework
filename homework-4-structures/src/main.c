@@ -23,21 +23,21 @@ static void print_info() {
     );
 }
 
-static void read_string(char *str) {
+static void read_string(char *output_buf) {
     printf("> ");
     fflush(stdout);
 
-    int arg_read_count = scanf("%" SCN_STR_LIMIT "[^\n]", str);
+    int arg_read_count = scanf("%" SCN_STR_LIMIT "[^\n]", output_buf);
     if (arg_read_count == 0) {
-        *str = '\0';
+        *output_buf = '\0';
     }
-    getchar();
+    getchar(); // Пропустить '\n' из буфера ввода
 }
 
-static void read_non_empty_string(char *str) {
+static void read_non_empty_string(char *output_buf) {
     do {
-        read_string(str);
-    } while (str[0] == '\0');
+        read_string(output_buf);
+    } while (output_buf[0] == '\0');
 }
 
 static void add_contact(struct abonent_vec *vec) {
