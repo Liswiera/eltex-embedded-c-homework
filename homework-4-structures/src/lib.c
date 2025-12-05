@@ -1,6 +1,6 @@
 #include "lib.h"
 
-static void strncpy_safe(char *restrict dest, char *restrict src, size_t dest_buf_size) {
+static void strncpy_safe(char *restrict dest, const char *restrict src, size_t dest_buf_size) {
     strncpy(dest, src, dest_buf_size);
     dest[dest_buf_size - 1] = '\0';
 }
@@ -28,14 +28,16 @@ struct abonent_vec abonent_vec_create(struct abonent *abonents, size_t capacity)
     return vec;
 }
 
-uint32_t abonent_vec_push(struct abonent_vec *restrict vec, const char *name, const char *second_name, const char *tel) {
+struct abonent* abonent_vec_push(struct abonent_vec *restrict vec, const char *name, const char *second_name, const char *tel) {
     if (vec->len < vec->capacity) {
-        abonent_create_from(&vec->abonents[vec->len], name, second_name, tel);
+        struct abonent *new_contact = &vec->abonents[vec->len];
+        abonent_create_from(new_contact, name, second_name, tel);
+
         vec->len++;
-        return 1;
+        return new_contact;
     }
     else {
-        return 0;
+        return NULL;
     }
 }
 
@@ -58,7 +60,7 @@ void abonent_vec_search_by_name_and_print(const struct abonent_vec *vec, const c
     printf("Поиск абонентов с именем \"%s\":\n", name);
     for (size_t i = 0; i < vec->len; i++) {
         if (strcmp(vec->abonents[i].name, name) == 0) {
-            printf("[ID#%zu] ", i);
+            printf("[ID#%zu] ", i + 1);
             abonent_print(&vec->abonents[i]);
         }
     }
@@ -68,7 +70,7 @@ void abonent_vec_search_by_name_and_print(const struct abonent_vec *vec, const c
 void abonent_vec_print_all(const struct abonent_vec *vec) {
     printf("Вектор абонентов [len = %zu] [capacity = %zu]\n", vec->len, vec->capacity);
     for (size_t i = 0; i < vec->len; i++) {
-        printf("[ID#%zu] ", i);
+        printf("[ID#%zu] ", i + 1);
         abonent_print(&vec->abonents[i]);
     }
     printf("\n");
