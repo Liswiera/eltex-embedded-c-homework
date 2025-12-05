@@ -2,6 +2,10 @@
 
 static void strncpy_safe(char *restrict dest, const char *restrict src, size_t dest_buf_size) {
     strncpy(dest, src, dest_buf_size);
+
+    // strncpy не обеспечивает наличие символа '\0',
+    // если в dest записано ровно dest_buf_size символов,
+    // символ '\0' необходимо добавить вручную
     dest[dest_buf_size - 1] = '\0';
 }
 
@@ -43,6 +47,8 @@ struct abonent* abonent_vec_push(struct abonent_vec *restrict vec, const char *n
 
 uint32_t abonent_vec_remove_at(struct abonent_vec *vec, size_t id) {
     if (id < vec->len) {
+        // По аналогии с std::vector происходит сдвиг всех
+        // элементов справа налево на место удалённого элемента
         for (size_t pos = id + 1; pos < vec->len; pos++) {
             struct abonent *dest = &vec->abonents[pos - 1];
             struct abonent *src = &vec->abonents[pos];
