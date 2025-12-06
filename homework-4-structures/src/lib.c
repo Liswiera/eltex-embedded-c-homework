@@ -3,9 +3,9 @@
 static void strncpy_safe(char *restrict dest, const char *restrict src, size_t dest_buf_size) {
     strncpy(dest, src, dest_buf_size);
 
-    // strncpy не обеспечивает наличие символа '\0',
+    // strncpy не гарантирует добавление символа '\0',
     // если в dest записано ровно dest_buf_size символов,
-    // символ '\0' необходимо добавить вручную
+    // поэтому символ '\0' необходимо добавить вручную
     dest[dest_buf_size - 1] = '\0';
 }
 
