@@ -6,8 +6,8 @@ OBJDIR := obj
 SRCDIR := src
 UNITYDIR := ../unity
 
-OBJMAIN := $(addprefix $(OBJDIR)/, abonent.o main.o)
-OBJTEST := $(addprefix $(OBJDIR)/, abonent.o test.o unity.o)
+OBJMAIN := $(addprefix $(OBJDIR)/, abonent.o abonent_list.o main.o)
+OBJTEST := $(addprefix $(OBJDIR)/, abonent.o abonent_list.o test.o unity.o)
 
 VPATH := $(SRCDIR):$(UNITYDIR)
 
