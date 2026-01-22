@@ -86,18 +86,18 @@ struct abonent_list_node* abonent_list_get_node_at(struct abonent_list *list, si
 struct abonent_list_node* abonent_list_extract_node_at(struct abonent_list *list, size_t id) {
     struct abonent_list_node *node = abonent_list_get_node_at(list, id);
     if (node != NULL) {
-        if (node->prev != NULL) {
-            node->prev->next = node->next;
-        }
-        if (node->next != NULL) {
-            node->next->prev = node->prev;
-        }
-
         if (list->head == node) {
             list->head = node->next;
         }
+        else {
+            node->prev->next = node->next;
+        }
+
         if (list->tail == node) {
             list->tail = node->prev;
+        }
+        else {
+            node->next->prev = node->prev;
         }
 
         list->size--;
