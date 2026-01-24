@@ -67,7 +67,7 @@ static void remove_contact(struct abonent_list *list) {
             printf("Введено некорректное число.\n\n");
         }
         else {
-            struct abonent_list_node *node = abonent_list_extract_node_at(list, id); // Not NULL
+            struct abonent_list_node *node = abonent_list_extract_node_at(list, id - 1); // Not NULL
 
             printf("Удалена запись под номером %zu:\n", id);
             abonent_print(&node->data);
