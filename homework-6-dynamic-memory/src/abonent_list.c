@@ -10,6 +10,10 @@ struct abonent_list_node* abonent_list_node_build(const char *name, const char *
     return result;
 }
 
+void abonent_list_node_free(struct abonent_list_node *node) {
+    free(node);
+}
+
 struct abonent_list* abonent_list_create_empty() {
     struct abonent_list* result = malloc(sizeof(struct abonent_list));
     if (result != NULL) {
@@ -109,7 +113,7 @@ struct abonent_list_node* abonent_list_extract_node_at(struct abonent_list *list
 uint32_t abonent_list_remove_at(struct abonent_list *list, size_t id) {
     struct abonent_list_node *node = abonent_list_extract_node_at(list, id);
     if (node != NULL) {
-        free(node);
+        abonent_list_node_free(node);
         return 1;
     }
     else {

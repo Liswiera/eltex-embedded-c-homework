@@ -9,6 +9,7 @@ struct abonent_list_node {
 };
 
 struct abonent_list_node* abonent_list_node_build(const char *name, const char *second_name, const char *tel);
+void abonent_list_node_free(struct abonent_list_node *node);
 
 struct abonent_list {
     struct abonent_list_node *head, *tail;
