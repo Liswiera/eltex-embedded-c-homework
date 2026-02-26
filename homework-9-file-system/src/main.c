@@ -4,8 +4,10 @@
 
 #include "dir_view.h"
 
-#define VIEW_COUNT 2
+
+#define FILE_NAME "output.txt"
 #define OUTPUT_STRING "String from file"
+#define VIEW_COUNT 2
 
 
 static void interactive_mode(struct dir_view **views, int view_count) {
@@ -108,14 +110,19 @@ static struct dir_view** create_dir_view_subwins(WINDOW *wnd, int n) {
 
 
 static int task_1() {
-    clear();
-    printw("Создание файла test_file.txt...\n");
+    FILE *file = NULL;
+    char *str_buf = NULL;
+    int ret_val = 0;
 
-    FILE *file = fopen("test_file.txt", "w+");
+    clear();
+
+    printw("Создание файла '%s'...\n", FILE_NAME);
+    file = fopen(FILE_NAME, "w+");
+
     if (file == NULL) {
         printw("Не удалось создать файл.\n");
-        getch();
-        return 1;
+        ret_val = 1;
+        goto CLEANUP;
     }
 
     printw("Запись строки '%s' в файл...\n", OUTPUT_STRING);
@@ -123,26 +130,26 @@ static int task_1() {
     int status = fprintf(file, "%s", OUTPUT_STRING);
     if (status < 0) {
         printw("Не удалось записать строку в файл.\n");
-        getch();
-        return 2;
+        ret_val = 2;
+        goto CLEANUP;
     }
 
-    printw("Создание буфера...");
+    printw("Создание буфера...\n");
 
     fseek(file, 0L, SEEK_END);
     long file_size = ftell(file);
 
     if (file_size < 0) {
         printw("Не удалось получить размер файла.\n");
-        getch();
-        return 3;
+        ret_val = 3;
+        goto CLEANUP;
     }
 
-    char *str_buf = malloc(sizeof(char) * file_size);
+    str_buf = malloc(sizeof(char) * file_size);
     if (str_buf == NULL) {
         printw("Не удалось создать буфер.\n");
-        getch();
-        return 4;
+        ret_val = 4;
+        goto CLEANUP;
     }
 
     printw("Считывание строки из файла...\n");
@@ -153,9 +160,8 @@ static int task_1() {
 
         if (byte_count != 1) {
             printw("Не удалось считать строку из файла.\n");
-            free(str_buf);
-            getch();
-            return 5;
+            ret_val = 5;
+            goto CLEANUP;
         }
     }
 
@@ -163,9 +169,11 @@ static int task_1() {
     addnstr(str_buf, file_size);
     printw("\n");
     
-    free(str_buf);
+CLEANUP:
+    if (str_buf != NULL) free(str_buf);
+    if (file != NULL) fclose(file);
     getch();
-    return 0;
+    return ret_val;
 }
 
 static int task_2() {
