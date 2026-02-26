@@ -1,6 +1,6 @@
 CC := gcc
 CFLAGS := -Wall
-LDLIBS := $(addprefix -l, curses)
+LDLIBS := $(addprefix -l, ncursesw)
 
 BINDIR := bin
 OBJDIR := obj
