@@ -1,3 +1,4 @@
+#include <locale.h>
 #include <ncurses.h>
 #include <stdlib.h>
 
@@ -119,9 +120,11 @@ static void init_curses() {
     curs_set(0);
 }
 
-int main() {
-    init_curses();
+int task_1() {
+    return 0;
+}
 
+int task_2() {
     struct dir_view **views = create_dir_view_subwins(stdscr, VIEW_COUNT);
     if (views == NULL) {
         endwin();
@@ -129,15 +132,40 @@ int main() {
         return 1;
     }
 
-    
     interactive_mode(views, VIEW_COUNT);
-
 
     for (int i = 0; i < VIEW_COUNT; i++) {
         dir_view_free(views[i]);
     }
     free(views);
 
-    endwin();
     return 0;
+}
+
+int main() {
+    setlocale(LC_ALL, "ru_RU.UTF-8");
+    init_curses();
+
+    printw("Выберите номер задания:\n");
+    printw("1. Создание файла, запись и чтение\n");
+    printw("2. Файловый менеджер\n");
+
+    int result = 0;
+
+    do {
+        int ch = getch();
+        switch (ch) {
+            case '1':
+                result = task_1();
+                break;
+            case '2':
+                result = task_2();
+                break;
+            default:
+                continue;
+        }
+    } while(FALSE);
+
+    endwin();
+    return result;
 }
