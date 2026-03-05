@@ -6,7 +6,7 @@ BINDIR := bin
 OBJDIR := obj
 SRCDIR := src
 
-OBJMAIN := $(addprefix $(OBJDIR)/, main.o)
+OBJMAIN := $(addprefix $(OBJDIR)/, main.o child_proc_arr.o)
 
 VPATH := $(SRCDIR):$(UNITYDIR)
 

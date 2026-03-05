@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "child_proc_arr.h"
 
 
 static int task_1() {
@@ -26,8 +27,105 @@ static int task_1() {
     return 0;
 }
 
+
 static int task_2() {
-    clear();
+    const size_t proc_count = 6;
+
+    struct child_proc_arr **processes = malloc(sizeof(struct child_proc_arr*) * proc_count);
+    if (processes == NULL) {
+        printf("Failed to allocate memory for **processes array\n");
+        return 1;
+    }
+
+    processes[0] = child_proc_arr_create(2, 1, 2);
+    processes[1] = child_proc_arr_create(2, 3, 4);
+    processes[2] = child_proc_arr_create(1, 5);
+    for (size_t i = 3; i < proc_count; i++) {
+        processes[i] = child_proc_arr_create(0);
+    }
+
+    int malloc_success = 1;
+    for (size_t i = 0; i < proc_count; i++) {
+        if (processes[i] == NULL) {
+            malloc_success = 0;
+            break;
+        }
+    }
+
+    if (malloc_success) {
+        uint32_t cur_id = 0;
+
+        PROC_BEGIN:
+        printf("[PID=%d PPID=%d] [#%" PRIu32 "] Процесс начал работу...\n",
+            getpid(),
+            getppid(),
+            cur_id
+        );
+        size_t child_count = 0;
+
+        for (size_t i = 0; i < processes[cur_id]->count; i++) {
+            uint32_t new_id = processes[cur_id]->id_arr[i];
+            if (new_id <= cur_id) {
+                fprintf(stderr, "WARNING: CUR_ID=%" PRIu32 ", NEW_ID=%" PRIu32 ", skipping...",
+                    cur_id,
+                    new_id
+                );
+                continue;
+            }
+
+            pid_t child_pid = fork();
+            switch(child_pid) {
+                case -1:
+                    printf("[PID=%d PPID=%d] [#%" PRIu32 "] Не удалось создать дочерний процесс #%" PRIu32 "\n",
+                        getpid(),
+                        getppid(),
+                        cur_id,
+                        new_id
+                    );
+                    break;
+                case 0:
+                    cur_id = new_id;
+                    goto PROC_BEGIN;
+                default:
+                    child_count++;
+                    printf("[PID=%d PPID=%d] [#%" PRIu32 "] Был создан дочерний процесс #%" PRIu32 "\n",
+                        getpid(),
+                        getppid(),
+                        cur_id,
+                        new_id
+                    );
+            }
+        }
+
+        for (size_t i = 0; i < child_count; i++) {
+            int status;
+            waitpid(-1, &status, 0);
+
+            printf("[PID=%d PPID=%d] [#%" PRIu32 "] Получен результат: %d\n",
+                getpid(),
+                getppid(),
+                cur_id,
+                WEXITSTATUS(status)
+            );
+        }
+
+        if (cur_id > 0) {
+            int exit_status = (int)cur_id;
+            printf("[PID=%d PPID=%d] [#%" PRIu32 "] Завершаю работу... (status = %d)\n",
+                getpid(),
+                getppid(),
+                cur_id,
+                exit_status
+            );
+            exit(exit_status);
+        }
+    }
+
+
+    for (size_t i = 0; i < proc_count; i++) {
+        child_proc_arr_free(processes[i]);
+    }
+    free(processes);
 
     return 0;
 }
