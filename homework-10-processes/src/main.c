@@ -5,6 +5,20 @@
 #include <unistd.h>
 #include "child_proc_arr.h"
 
+#define STR_LIMIT 255
+#define SCN_STR_LIMIT "255"
+
+static void read_string(char *output_buf) {
+    printf("> ");
+    fflush(stdout);
+
+    int arg_read_count = scanf("%" SCN_STR_LIMIT "[^\n]", output_buf);
+    if (arg_read_count == 0) {
+        *output_buf = '\0';
+    }
+    getchar(); // Пропустить '\n' из буфера ввода
+}
+
 
 static int task_1() {
     pid_t child_pid = fork();
@@ -27,8 +41,8 @@ static int task_1() {
     return 0;
 }
 
-
 static int task_2() {
+    // Общее количество процессов в дереве процессов, включая самый первый процесс
     const size_t proc_count = 6;
 
     struct child_proc_arr **processes = malloc(sizeof(struct child_proc_arr*) * proc_count);
@@ -37,13 +51,15 @@ static int task_2() {
         return 1;
     }
 
-    processes[0] = child_proc_arr_create(2, 1, 2);
-    processes[1] = child_proc_arr_create(2, 3, 4);
-    processes[2] = child_proc_arr_create(1, 5);
+    //
+    processes[0] = child_proc_arr_create(2, 1, 2); // Процесс #0 порождает #1 и #2
+    processes[1] = child_proc_arr_create(2, 3, 4); // Процесс #1 порождает #3 и #4
+    processes[2] = child_proc_arr_create(1, 5); // Процесс #2 порождает #5
     for (size_t i = 3; i < proc_count; i++) {
-        processes[i] = child_proc_arr_create(0);
+        processes[i] = child_proc_arr_create(0); // Оставшиеся дочерние процессы являются листовыми
     }
 
+    // Error handling
     int malloc_success = 1;
     for (size_t i = 0; i < proc_count; i++) {
         if (processes[i] == NULL) {
@@ -56,15 +72,19 @@ static int task_2() {
         uint32_t cur_id = 0;
 
         PROC_BEGIN:
+        // Начало работы процесса с ID=cur_id
+
         printf("[PID=%d PPID=%d] [#%" PRIu32 "] Процесс начал работу...\n",
             getpid(),
             getppid(),
             cur_id
         );
-        size_t child_count = 0;
+        size_t child_count = 0; // Количество успешно созданных дочерних процессов
 
         for (size_t i = 0; i < processes[cur_id]->count; i++) {
-            uint32_t new_id = processes[cur_id]->id_arr[i];
+            uint32_t new_id = processes[cur_id]->id_arr[i]; // ID будущего дочернего процесса
+
+            // Дополнительная проверка для избегания потенциальной fork-бомбы
             if (new_id <= cur_id) {
                 fprintf(stderr, "WARNING: CUR_ID=%" PRIu32 ", NEW_ID=%" PRIu32 ", skipping...",
                     cur_id,
@@ -84,9 +104,11 @@ static int task_2() {
                     );
                     break;
                 case 0:
+                    // В дочернем процессе заменяем ID и переходим в начало
                     cur_id = new_id;
                     goto PROC_BEGIN;
                 default:
+                    // Дочерний процесс был успешно создан, необходимо его учесть в общее количество child_count
                     child_count++;
                     printf("[PID=%d PPID=%d] [#%" PRIu32 "] Был создан дочерний процесс #%" PRIu32 "\n",
                         getpid(),
@@ -97,9 +119,10 @@ static int task_2() {
             }
         }
 
+        // Ожидание заврешения успешно созданных дочерних процессов
         for (size_t i = 0; i < child_count; i++) {
             int status;
-            waitpid(-1, &status, 0);
+            wait(&status);
 
             printf("[PID=%d PPID=%d] [#%" PRIu32 "] Получен результат: %d\n",
                 getpid(),
@@ -131,7 +154,9 @@ static int task_2() {
 }
 
 static int task_3() {
-    clear();
+    while (1) {
+
+    }
 
     return 0;
 }
