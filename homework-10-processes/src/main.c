@@ -51,7 +51,7 @@ static int task_2() {
         return 1;
     }
 
-    //
+    // Создание иерархии процессов
     processes[0] = child_proc_arr_create(2, 1, 2); // Процесс #0 порождает #1 и #2
     processes[1] = child_proc_arr_create(2, 3, 4); // Процесс #1 порождает #3 и #4
     processes[2] = child_proc_arr_create(1, 5); // Процесс #2 порождает #5
