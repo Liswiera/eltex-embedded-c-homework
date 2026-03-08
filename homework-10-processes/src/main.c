@@ -6,21 +6,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "child_proc_arr.h"
+#include "args_tools.h"
 
 #define STR_LIMIT 255
 #define SCN_STR_LIMIT "255"
 #define ARG_CAPACITY 256
-
-static void read_string(char *output_buf) {
-    printf("> ");
-    fflush(stdout);
-
-    int arg_read_count = scanf("%" SCN_STR_LIMIT "[^\n]", output_buf);
-    if (arg_read_count == 0) {
-        *output_buf = '\0';
-    }
-    getchar(); // Пропустить '\n' из буфера ввода
-}
 
 
 static int task_1() {
@@ -156,95 +146,18 @@ static int task_2() {
     return 0;
 }
 
-static void str_trim(const char* str, const char** start, const char** end) {
-    const char *start_l, *end_l;
 
-    for (start_l = str; *start_l != '\0'; start_l++) {
-        if (!isspace(*start_l)) break;
+static void read_string(char *output_buf) {
+    printf("> ");
+    fflush(stdout);
+
+    int arg_read_count = scanf("%" SCN_STR_LIMIT "[^\n]", output_buf);
+    if (arg_read_count == 0) {
+        *output_buf = '\0';
     }
-
-    for (end_l = start_l; *end_l != '\0'; end_l++);
-    end_l--;
-
-    for (; end_l >= start_l; end_l--) {
-        if (!isspace(*end_l)) break;
-    }
-    end_l++;
-
-    *start = start_l;
-    *end = end_l;
+    getchar(); // Пропустить '\n' из буфера ввода
 }
 
-static char** allocate_empty_args(size_t arg_count, size_t arg_capacity) {
-    char **args = malloc(sizeof(char*) * (arg_count + 1));;
-    if (args == NULL) return NULL;
-
-    for (size_t i = 0; i <= arg_count; i++) {
-        args[i] = NULL;
-    }
-
-    int malloc_success = 1;
-    for (size_t i = 0; i < arg_count; i++) {
-        args[i] = malloc(sizeof(char) * arg_capacity);
-        if (args[i] == NULL) {
-            malloc_success = 0;
-            break;
-        }
-    }
-
-    if (!malloc_success) {
-        for (size_t i = 0; i < arg_count; i++) {
-            free(args[i]);
-        }
-        free(args);
-        args = NULL;
-    }
-
-    return args;
-}
-
-static char** get_arg_list(const char* str) {
-    size_t arg_count;
-    char** args = NULL;
-    const char *start, *end;
-
-    str_trim(str, &start, &end);
-
-    if (start < end) {
-        arg_count = 1;
-
-        for (const char *ptr = start + 1; ptr < end; ptr++) {
-            if (isspace(*ptr) && !isspace(*(ptr - 1))) {
-                arg_count++;
-            }
-        }
-
-        args = allocate_empty_args(arg_count, ARG_CAPACITY);
-
-        size_t cur_arg_id = 0;
-        char *arg_dest = args[cur_arg_id];
-
-        for (const char *ptr = start; ptr < end; ptr++) {
-            if (isspace(*ptr)) {
-                if (!isspace(*(ptr - 1))) {
-                    *arg_dest = '\0';
-                    arg_dest = args[++cur_arg_id];
-                }
-            }
-            else {
-                *(arg_dest++) = *ptr;
-            }
-        }
-
-        *arg_dest = '\0';
-        args[arg_count] = NULL;
-    }
-    else {
-        args = allocate_empty_args(0, ARG_CAPACITY);
-    }
-
-    return args;
-}
 
 static int task_3() {
     char buf[STR_LIMIT + 1];
@@ -252,7 +165,7 @@ static int task_3() {
     while (1) {
         read_string(buf);
         
-        char** args = get_arg_list(buf);
+        char** args = args_parse_from_str(buf, ARG_CAPACITY);
         if (args == NULL) {
             printf("Не удалось создать массив аргументов для выполнения команды.\n");
             continue;
@@ -260,6 +173,7 @@ static int task_3() {
         
         if (args[0] != NULL) {
             if (strcmp(args[0], "exit") == 0) {
+                args_free(args);
                 break;
             }
 
@@ -277,8 +191,7 @@ static int task_3() {
             }
         }
 
-        for (int i = 0; args[i] != NULL; i++) free(args[i]);
-        free(args);
+        args_free(args);
     }
 
     return 0;
@@ -300,6 +213,11 @@ static void init_curses() {
     curs_set(0);
 }
 
+static void end_curses() {
+    curs_set(1);
+    endwin();
+}
+
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
     init_curses();
@@ -318,15 +236,15 @@ int main() {
         int ch = getch();
         switch (ch) {
             case '1':
-                endwin();
+                end_curses();
                 result = task_1();
                 break;
             case '2':
-                endwin();
+                end_curses();
                 result = task_2();
                 break;
             case '3':
-                endwin();
+                end_curses();
                 result = task_3();
                 break;
             default:
