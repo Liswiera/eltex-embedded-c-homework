@@ -1,12 +1,15 @@
+#include <ctype.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "child_proc_arr.h"
 
 #define STR_LIMIT 255
 #define SCN_STR_LIMIT "255"
+#define ARG_CAPACITY 256
 
 static void read_string(char *output_buf) {
     printf("> ");
@@ -153,9 +156,129 @@ static int task_2() {
     return 0;
 }
 
-static int task_3() {
-    while (1) {
+static void str_trim(const char* str, const char** start, const char** end) {
+    const char *start_l, *end_l;
 
+    for (start_l = str; *start_l != '\0'; start_l++) {
+        if (!isspace(*start_l)) break;
+    }
+
+    for (end_l = start_l; *end_l != '\0'; end_l++);
+    end_l--;
+
+    for (; end_l >= start_l; end_l--) {
+        if (!isspace(*end_l)) break;
+    }
+    end_l++;
+
+    *start = start_l;
+    *end = end_l;
+}
+
+static char** allocate_empty_args(size_t arg_count, size_t arg_capacity) {
+    char **args = malloc(sizeof(char*) * (arg_count + 1));;
+    if (args == NULL) return NULL;
+
+    for (size_t i = 0; i <= arg_count; i++) {
+        args[i] = NULL;
+    }
+
+    int malloc_success = 1;
+    for (size_t i = 0; i < arg_count; i++) {
+        args[i] = malloc(sizeof(char) * arg_capacity);
+        if (args[i] == NULL) {
+            malloc_success = 0;
+            break;
+        }
+    }
+
+    if (!malloc_success) {
+        for (size_t i = 0; i < arg_count; i++) {
+            free(args[i]);
+        }
+        free(args);
+        args = NULL;
+    }
+
+    return args;
+}
+
+static char** get_arg_list(const char* str) {
+    size_t arg_count;
+    char** args = NULL;
+    const char *start, *end;
+
+    str_trim(str, &start, &end);
+
+    if (start < end) {
+        arg_count = 1;
+
+        for (const char *ptr = start + 1; ptr < end; ptr++) {
+            if (isspace(*ptr) && !isspace(*(ptr - 1))) {
+                arg_count++;
+            }
+        }
+
+        args = allocate_empty_args(arg_count, ARG_CAPACITY);
+
+        size_t cur_arg_id = 0;
+        char *arg_dest = args[cur_arg_id];
+
+        for (const char *ptr = start; ptr < end; ptr++) {
+            if (isspace(*ptr)) {
+                if (!isspace(*(ptr - 1))) {
+                    *arg_dest = '\0';
+                    arg_dest = args[++cur_arg_id];
+                }
+            }
+            else {
+                *(arg_dest++) = *ptr;
+            }
+        }
+
+        *arg_dest = '\0';
+        args[arg_count] = NULL;
+    }
+    else {
+        args = allocate_empty_args(0, ARG_CAPACITY);
+    }
+
+    return args;
+}
+
+static int task_3() {
+    char buf[STR_LIMIT + 1];
+
+    while (1) {
+        read_string(buf);
+        
+        char** args = get_arg_list(buf);
+        if (args == NULL) {
+            printf("Не удалось создать массив аргументов для выполнения команды.\n");
+            continue;
+        }
+        
+        if (args[0] != NULL) {
+            if (strcmp(args[0], "exit") == 0) {
+                break;
+            }
+
+            pid_t child_pid = fork();
+            switch (child_pid) {
+                case -1:
+                    printf("Не удалось создать дочерний процесс для выполнения команды.\n");
+                    break;
+                case 0:
+                    execvp(args[0], args);
+                    printf("Не удалось выполнить команду '%s'\n", args[0]);
+                    exit(1);
+                default:
+                    wait(NULL);
+            }
+        }
+
+        for (int i = 0; args[i] != NULL; i++) free(args[i]);
+        free(args);
     }
 
     return 0;
