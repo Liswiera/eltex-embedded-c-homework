@@ -28,6 +28,8 @@
 #define SUPPLIER_WAIT_TIME 1
 
 
+int supplier_flag;
+
 void* thread_client(void *arg) {
     struct client *cl = arg;
     struct store *stores = cl->stores;
@@ -45,7 +47,7 @@ void* thread_client(void *arg) {
         uint64_t retrieved_amount = store_retrieve_amount(selected_store, cl->demand);
         cl->demand -= retrieved_amount;
 
-        printf("Client#%zu (%" PRIu64 " -> %" PRIu64 "), Store#%zu (%" PRIu64 " -> %" PRIu64 "), retrieved amount is %" PRIu64 "\n",
+        printf("Client #%zu (%" PRIu64 " -> %" PRIu64 "), Store #%zu (%" PRIu64 " -> %" PRIu64 "), retrieved amount is %" PRIu64 "\n",
             cl->id, old_demand, cl->demand,
             selected_store->id, old_amount, selected_store->amount,
             retrieved_amount
@@ -54,7 +56,7 @@ void* thread_client(void *arg) {
         store_unlock(selected_store);
     }
 
-    printf("Client#%zu: Done.\n", cl->id);
+    printf("Client #%zu: Done.\n", cl->id);
 
     return NULL;
 }
@@ -63,7 +65,9 @@ void* thread_supplier(void *arg) {
     struct supplier *spl = arg;
     struct store *stores = spl->stores;
 
-    while (1) {
+    while (supplier_flag) {
+        pthread_testcancel();
+
         sleep(spl->time_to_wait);
         size_t store_id = rand() % spl->store_count;
         struct store *selected_store = &stores[store_id];
@@ -73,7 +77,7 @@ void* thread_supplier(void *arg) {
         uint64_t old_amount = selected_store->amount;
         uint64_t added_amount = store_add_amount(selected_store, spl->supply);
 
-        printf("Supplier#%zu, Store#%zu (%" PRIu64 " -> %" PRIu64 "), added amount is %" PRIu64 "\n",
+        printf("Supplier #%zu, Store #%zu (%" PRIu64 " -> %" PRIu64 "), added amount is %" PRIu64 "\n",
             spl->id,
             selected_store->id, old_amount, selected_store->amount,
             added_amount
@@ -81,6 +85,8 @@ void* thread_supplier(void *arg) {
 
         store_unlock(selected_store);
     }
+
+    printf("Supplier #%zu: Done.\n", spl->id);
 
     return NULL;
 }
@@ -114,14 +120,37 @@ int main() {
     }
 
 
+    // Вывод стартовой информации
+    printf("STORES:\n");
+    for (size_t i = 0; i < STORE_COUNT; i++) {
+        const struct store *st = &stores[i];
+        printf("Store #%zu: holds %" PRIu64 " initially\n", st->id, st->amount);
+    }
+
+    printf("CLIENTS:\n");
+    for (size_t i = 0; i < CLIENT_COUNT; i++) {
+        const struct client *cl = &clients[i];
+        printf("Client #%zu: demands %" PRIu64 " (%us wait)\n", cl->id, cl->demand, cl->time_to_wait);
+    }
+
+    printf("SUPPLIERS:\n");
+    for (size_t i = 0; i < SUPPLIER_COUNT; i++) {
+        const struct supplier *spl = &suppliers[i];
+        printf("Supplier #%zu: supplies %" PRIu64 " each iteration (%us wait)\n", spl->id, spl->supply, spl->time_to_wait);
+    }
+
+    printf("\n");
+    
+
     // Создание потоков покупателей и поставщиков
     pthread_t client_threads[CLIENT_COUNT];
     for (size_t i = 0; i < CLIENT_COUNT; i++) {
         pthread_create(&client_threads[i], NULL, thread_client, &clients[i]);
     }
 
+    supplier_flag = 1;
     pthread_t supplier_threads[SUPPLIER_COUNT];
-    for (size_t i = 0; i < CLIENT_COUNT; i++) {
+    for (size_t i = 0; i < SUPPLIER_COUNT; i++) {
         pthread_create(&supplier_threads[i], NULL, thread_supplier, &suppliers[i]);
     }
 
@@ -131,9 +160,10 @@ int main() {
         pthread_join(client_threads[i], NULL);
     }
 
-    // Принудительное завершение потоков поставщиков
+    // Ожидание завершения потоков поставщиков
+    supplier_flag = 0;
     for (size_t i = 0; i < SUPPLIER_COUNT; i++) {
-        pthread_cancel(supplier_threads[i]); // TODO: it doesn't cancel the threads
+        pthread_join(supplier_threads[i], NULL);
     }
 
     // Освобождение ресурсов
