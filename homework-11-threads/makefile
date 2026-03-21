@@ -8,7 +8,7 @@ SRCDIR := src
 
 OBJMAIN := $(addprefix $(OBJDIR)/, main.o store.o client.o supplier.o)
 
-VPATH := $(SRCDIR):$(UNITYDIR)
+VPATH := $(SRCDIR)
 
 .PHONY : all
 all: main

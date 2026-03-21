@@ -8,7 +8,7 @@ SRCDIR := src
 
 OBJMAIN := $(addprefix $(OBJDIR)/, main.o child_proc_arr.o args_tools.o)
 
-VPATH := $(SRCDIR):$(UNITYDIR)
+VPATH := $(SRCDIR)
 
 .PHONY : all
 all: main
