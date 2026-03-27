@@ -173,15 +173,9 @@ int cmd_execute(struct command **cmds) {
         }
     }
 
-    int success = 1;
     for (int i = 0; i < child_count; i++) {
-        int status;
-        wait(&status);
-
-        if (WEXITSTATUS(status) == EXIT_FAILURE) {
-            success = 0;
-        }
+        wait(NULL);
     }
 
-    return (success && (child_count == exec_count)) ? 0 : -1;
+    return (child_count == exec_count) ? 0 : -1;
 }
