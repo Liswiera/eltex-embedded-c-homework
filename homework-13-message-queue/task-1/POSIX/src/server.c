@@ -10,7 +10,7 @@ int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
 
     struct mq_attr attributes;
-    attributes.mq_maxmsg = 8;
+    attributes.mq_maxmsg = MQ_MAXMSG;
     attributes.mq_msgsize = MQ_MSGSIZE;
 
     mqd_t mq = mq_open(MQUEUE_PATH, O_CREAT | O_RDWR, 0600, &attributes);
