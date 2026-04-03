@@ -3,8 +3,8 @@
 
 #include "message_types.h"
 #include "queue_pair.h"
-#include "server/history.h"
-#include "server/user.h"
+#include "history.h"
+#include "user.h"
 
 #define BUF_LEN 256
 #define HISTORY_LEN 1024
@@ -13,9 +13,9 @@
 
 static void broadcast_msg(const struct user *users, size_t user_count, const struct message *msg) {
     for (size_t id = 0; id < user_count; id++) {
-        struct user *usr = &users[id];
+        const struct user *usr = &users[id];
         if (usr->is_connected) {
-            mq_send(users[id].queue_id, &msg, MQ_MSGSIZE, 0);
+            mq_send(users[id].queue_id, (char*)msg, MQ_MSGSIZE, 0);
         }
     }
 }
@@ -37,13 +37,15 @@ void* thread_listener(void *arg) {
     
     printf("[INFO] Жду сообщения от пользователей...\n");
     while (keep_listening) {
-        ssize_t bytes_read = mq_receive(server_listener_queue, &msg, MQ_MSGSIZE, NULL);
+        ssize_t bytes_read = mq_receive(server_listener_queue, (char*)&msg, MQ_MSGSIZE, NULL);
         if (bytes_read == -1) {
             fprintf(stderr, "[ERROR] Не удалось прочитать сообщение из server_listener_queue.\n");
             continue;
         }
 
+        struct user *usr;
         int add_message_to_history = 0;
+
         switch (msg.type) {
             case connection_request:
                 char user_queue_name_buf[BUF_LEN];
@@ -55,54 +57,50 @@ void* thread_listener(void *arg) {
                     break;
                 }
 
-                int success = 1;
+                int new_user_connected = 0;
 
-                ssize_t user_id = user_find_by_name(users, user_count, msg.user_name);
-                if (user_id == -1) {
-                    user_id = user_count;
-                }
-
-                if (user_id < MAX_USER_COUNT) {
-                    struct user *new_user = &users[user_id];
-
-                    int new_user_status; // Статус, обозначающий корректное инициализованное состояние пользователя
-                    if (user_id < user_count) {
-                        new_user->is_connected = 1;
-                        new_user->queue_id = user_queue;
-
-                        new_user_status = 0;
+                usr = user_find_by_name(users, user_count, msg.user_name);
+                if (usr != NULL) {
+                    // Был найден уже существующий пользователь, пробуем подсоединить его обратно в чат
+                    
+                    if (!usr->is_connected) {
+                        user_connect(usr, user_queue);
+                        new_user_connected = 1;
                     }
                     else {
-                        new_user_status = user_init(&new_user, user_queue_name_buf, 1, user_queue);
-                    }
-
-                    if (new_user_status == 0) {
-                        // Отправляем пользователю все сообщения из истории
-                        for (size_t id = 0; id < hist->msg_count; id++) {
-                            mq_send(new_user->queue_id, history_get_message(hist, id), MQ_MSGSIZE, 0); // Return value is ignored
-                        }
-                    } else {
-                        fprintf(stderr, "[ERROR] Не удалось инициализировать структуру пользователя с именем '%s'.\n", user_queue_name_buf);
-                        success = 0;
+                        fprintf(stderr, "[ERROR] Пользователь с именем '%s' уже подключён.\n", msg.user_name);
                     }
                 }
                 else {
-                    printf("[WARN] Количество пользователей достигнуло максимума.\n");
-                    success = 0;
+                    // Выделяем место под нового пользователя
+
+                    if (user_count < MAX_USER_COUNT) {
+                        usr = &users[user_count];
+                        int user_init_status = user_init(usr, msg.user_name, 1, user_queue);
+
+                        if (user_init_status == 0) {
+                            user_count++;
+                            new_user_connected = 1;
+                        }
+                        else {
+                            fprintf(stderr, "[ERROR] Не удалось инициализировать структуру пользователя с именем '%s'.\n", user_queue_name_buf);
+                        }
+                    }
+                    else {
+                        printf("[WARN] Количество пользователей достигнуло максимума.\n");
+                    }
                 }
 
-                if (success) {
-                    if (user_id == user_count) {
-                        user_count++;
-                    }
 
+                if (new_user_connected) {
                     // Уведомить всех пользователей о подключении нового
+                    msg.type = user_connected;
                     add_message_to_history = 1;
                 }
-                if (!success) {
+                else {
                     // Уведомить пользователя о невозможности его обслуживания
                     message_set(&msg, session_ended, "Server", "Internal Error.");
-                    mq_send(user_queue, &msg, MQ_MSGSIZE, 0); // Return value is ignored
+                    mq_send(user_queue, (char*)&msg, MQ_MSGSIZE, 0); // Return value is ignored
 
                     mq_close(user_queue);
                     // Queue must be unlinked by the user
@@ -110,12 +108,13 @@ void* thread_listener(void *arg) {
 
                 break;
             case disconnection_request:
-                ssize_t id = user_find_by_name(users, user_count, msg.user_name);
-                if (id != -1) {
-                    if (users[id].is_connected) {
-                        user_disconnect(&users[id]);
+                usr = user_find_by_name(users, user_count, msg.user_name);
+                if (usr != NULL) {
+                    if (usr->is_connected) {
+                        user_disconnect(usr);
 
                         // Уведомить всех пользователей об отсоединении
+                        msg.type = user_disconnected;
                         add_message_to_history = 1;
                     }
                     else {
@@ -132,16 +131,10 @@ void* thread_listener(void *arg) {
                 add_message_to_history = 1;
                 break;
             case session_ended:
-                // Посылаем каждому подключённому пользователю сообщение о завершении работы сервера
-                // Это сообщение не является частью истории сообщений, поэтому оно будет отправлено
-                // вне зависимости от переполненности истории
-                message_set(&msg, session_ended, "Server", "Server is shutting down.");
-                broadcast_msg(users, user_count, &msg);
-
                 keep_listening = 0;
                 break;
             default:
-                printf("[WARN] Было получено сообщение с неверным типом из connection_request_queue.\n");
+                printf("[WARN] Было получено сообщение с неверным типом из server_listener_queue.\n");
         }
 
         if (add_message_to_history) {
@@ -149,30 +142,38 @@ void* thread_listener(void *arg) {
             if (!is_added) {
                 printf("[ERROR] На сервере превышено количество сообщений в истории.\n");
             }
+
+            printf("%s: %s\n", msg.user_name, msg.text);
         }
 
-        if (keep_listening) {
-            // Отправляем оставшиеся сообщения пользователям, которые они ещё не получили
-            for (size_t id; id < user_count; id++) {
-                struct user *usr = &users[id];
+        // Отправляем оставшиеся сообщения пользователям, которые они ещё не получили
+        for (size_t usr_id = 0; usr_id < user_count; usr_id++) {
+            struct user *usr = &users[usr_id];
 
-                if (!usr->is_connected) {
-                    continue;
-                }
-
-                for (size_t msg_id = usr->messages_sent; msg_id < hist->msg_count; msg_id++) {
-                    const struct message *msg_to_send = &hist->msgs[msg_id];
-                    mq_send(usr->queue_id, msg_to_send, MQ_MSGSIZE, 0);
-                }
-                usr->messages_sent = hist->msg_count;
+            if (!usr->is_connected) {
+                continue;
             }
+
+            for (size_t msg_id = usr->messages_sent; msg_id < hist->msg_count; msg_id++) {
+                const struct message *msg_to_send = history_get_message(hist, msg_id);
+                mq_send(usr->queue_id, (char*)msg_to_send, MQ_MSGSIZE, 0); // Return value is ignored
+            }
+            usr->messages_sent = hist->msg_count;
         }
     }
+
+    // Посылаем каждому подключенному пользователю сообщение о завершении работы сервера
+    // Это сообщение не является частью истории сообщений, поэтому оно будет отправлено
+    // вне зависимости от переполненности истории
+    message_set(&msg, session_ended, "Server", "Server is shutting down.");
+    broadcast_msg(users, user_count, &msg);
 
     // Высвобождение ресурсов у массива пользователей
     for (size_t id = 0; id < user_count; id++) {
         user_destroy(&users[id]);
     }
+
+    return NULL;
 }
 
 int main() {
@@ -191,17 +192,17 @@ int main() {
 
 
     // TODO: use ncurses, wait until 'q' is pressed
-    sleep(20);
+    sleep(15);
 
 
     // Посылаем сообщение потоку listener_thread о завершении сеанса
     struct message msg;
     message_set(&msg, session_ended, "Server main thread", "Message for the listener thread.");
-    mq_send(server_listener_queue.write_end, &msg, MQ_MSGSIZE, 0);
+    mq_send(server_listener_queue.write_end, (char*)&msg, MQ_MSGSIZE, 0);
 
     pthread_join(listener_thread, NULL);
 
     // Cleanup
-    close_queue_pair(&server_listener_queue);
+    destroy_queue_pair(&server_listener_queue);
     return 0;
 }

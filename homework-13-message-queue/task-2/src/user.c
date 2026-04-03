@@ -9,7 +9,7 @@ int user_init(struct user *new_user, const char *name, int is_connected, mqd_t q
     strcpy(new_user->name, name);
     new_user->is_connected = is_connected;
     new_user->queue_id = queue_id;
-    new_user->messages_sent;
+    new_user->messages_sent = 0;
 
     return 0;
 }
@@ -29,14 +29,20 @@ struct user* user_build(const char *name, int is_connected, mqd_t queue_id) {
     return new_user;
 }
 
-ssize_t user_find_by_name(const struct user *users, size_t user_count, const char *name) {
+struct user* user_find_by_name(struct user *users, size_t user_count, const char *name) {
     for (size_t i = 0; i < user_count; i++) {
-        if (strcmp(users[i].name, name) == 0) {
-            return i;
+        struct user *usr = &users[i];
+        if (strcmp(usr->name, name) == 0) {
+            return usr;
         }
     }
 
-    return -1;
+    return NULL;
+}
+
+void user_connect(struct user *usr, mqd_t queue_id) {
+    usr->is_connected = 1;
+    usr->queue_id = queue_id;
 }
 
 void user_disconnect(struct user *usr) {
@@ -46,7 +52,6 @@ void user_disconnect(struct user *usr) {
 
 void user_destroy(struct user* usr) {
     mq_close(usr->queue_id);
-    mq_unlink(usr->queue_id);
 
     free(usr->name);
 }

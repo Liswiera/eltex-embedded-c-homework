@@ -18,4 +18,3 @@ struct message {
 };
 
 void message_set(struct message *msg, enum msg_type type, const char *user_name, const char* text);
-void message_copy(struct message* restrict dest, const struct message* restrict src);

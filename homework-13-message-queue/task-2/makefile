@@ -5,8 +5,8 @@ BINDIR := bin
 OBJDIR := obj
 SRCDIR := src
 
-OBJSERVER := $(addprefix $(OBJDIR)/, server.o protocol.o)
-OBJCLIENT := $(addprefix $(OBJDIR)/, client.o protocol.o)
+OBJSERVER := $(addprefix $(OBJDIR)/, server.o protocol.o queue_pair.o message_types.o history.o user.o)
+OBJCLIENT := $(addprefix $(OBJDIR)/, client.o protocol.o queue_pair.o message_types.o history.o)
 
 VPATH := $(SRCDIR)
 

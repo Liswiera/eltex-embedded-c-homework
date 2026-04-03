@@ -1,5 +1,5 @@
 #pragma once
-#include "../message_types.h"
+#include "message_types.h"
 
 struct history {
     struct message *msgs;
