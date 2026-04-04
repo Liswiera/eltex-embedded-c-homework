@@ -51,7 +51,9 @@ void user_disconnect(struct user *usr) {
 }
 
 void user_destroy(struct user* usr) {
-    mq_close(usr->queue_id);
+    if (usr->queue_id != (mqd_t)-1) {
+        mq_close(usr->queue_id);
+    }
 
     free(usr->name);
 }

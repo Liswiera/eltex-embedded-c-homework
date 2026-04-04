@@ -1,12 +1,13 @@
 CC := gcc
 CFLAGS := -Wall
+LDLIBS := $(addprefix -l, ncursesw)
 
 BINDIR := bin
 OBJDIR := obj
 SRCDIR := src
 
-OBJSERVER := $(addprefix $(OBJDIR)/, server.o protocol.o queue_pair.o message_types.o history.o user.o)
-OBJCLIENT := $(addprefix $(OBJDIR)/, client.o protocol.o queue_pair.o message_types.o history.o)
+OBJSERVER := $(addprefix $(OBJDIR)/, server.o protocol.o queue_pair.o message_types.o history.o user.o ui.o)
+OBJCLIENT := $(addprefix $(OBJDIR)/, client.o protocol.o queue_pair.o message_types.o history.o user.o ui.o)
 
 VPATH := $(SRCDIR)
 
@@ -14,10 +15,10 @@ VPATH := $(SRCDIR)
 all: server client
 
 server: $(OBJSERVER) | $(BINDIR)
-	$(CC) $(CFLAGS) $(OBJSERVER) -o $(BINDIR)/server
+	$(CC) $(CFLAGS) $(OBJSERVER) -o $(BINDIR)/server $(LDLIBS)
 
 client: $(OBJCLIENT) | $(BINDIR)
-	$(CC) $(CFLAGS) $(OBJCLIENT) -o $(BINDIR)/client
+	$(CC) $(CFLAGS) $(OBJCLIENT) -o $(BINDIR)/client $(LDLIBS)
 
 $(BINDIR):
 	mkdir $(BINDIR)

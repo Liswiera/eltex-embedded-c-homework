@@ -1,15 +1,19 @@
 #include <locale.h>
+#include <curses.h>
 #include <pthread.h>
 
+#include "history.h"
 #include "message_types.h"
 #include "queue_pair.h"
-#include "history.h"
+#include "ui.h"
 #include "user.h"
 
 #define BUF_LEN 256
 #define HISTORY_LEN 1024
 #define MAX_USER_COUNT 8
 
+
+struct chat_ui *server_ui;
 
 static void broadcast_msg(const struct user *users, size_t user_count, const struct message *msg) {
     for (size_t id = 0; id < user_count; id++) {
@@ -25,7 +29,7 @@ void* thread_listener(void *arg) {
 
     struct history *hist = history_with_capacity(HISTORY_LEN);
     if (hist == NULL) {
-        fprintf(stderr, "Не удалось создать историю сообщений.\n");
+        //printw("Не удалось создать историю сообщений.\n");
         exit(1);
     }
 
@@ -35,11 +39,12 @@ void* thread_listener(void *arg) {
     struct message msg; // структура для получения/отправки сообщений
     int keep_listening = 1;
     
-    printf("[INFO] Жду сообщения от пользователей...\n");
+    ui_print_exit_prompt(server_ui);
+
     while (keep_listening) {
         ssize_t bytes_read = mq_receive(server_listener_queue, (char*)&msg, MQ_MSGSIZE, NULL);
         if (bytes_read == -1) {
-            fprintf(stderr, "[ERROR] Не удалось прочитать сообщение из server_listener_queue.\n");
+            // Не удалось прочитать сообщение из server_listener_queue
             continue;
         }
 
@@ -53,7 +58,7 @@ void* thread_listener(void *arg) {
 
                 mqd_t user_queue = mq_open(user_queue_name_buf, O_WRONLY);
                 if (user_queue == (mqd_t)-1) {
-                    fprintf(stderr, "[ERROR] Не удалось открыть очередь '%s' на запись.\n", user_queue_name_buf);
+                    //printw("[ERROR] Не удалось открыть очередь '%s' на запись.\n", user_queue_name_buf);
                     break;
                 }
 
@@ -68,7 +73,7 @@ void* thread_listener(void *arg) {
                         new_user_connected = 1;
                     }
                     else {
-                        fprintf(stderr, "[ERROR] Пользователь с именем '%s' уже подключён.\n", msg.user_name);
+                        //printw("[ERROR] Пользователь с именем '%s' уже подключён.\n", msg.user_name);
                     }
                 }
                 else {
@@ -83,11 +88,11 @@ void* thread_listener(void *arg) {
                             new_user_connected = 1;
                         }
                         else {
-                            fprintf(stderr, "[ERROR] Не удалось инициализировать структуру пользователя с именем '%s'.\n", user_queue_name_buf);
+                            //printw("[ERROR] Не удалось инициализировать структуру пользователя с именем '%s'.\n", user_queue_name_buf);
                         }
                     }
                     else {
-                        printf("[WARN] Количество пользователей достигнуло максимума.\n");
+                        //printw("[WARN] Количество пользователей достигнуло максимума.\n");
                     }
                 }
 
@@ -96,6 +101,8 @@ void* thread_listener(void *arg) {
                     // Уведомить всех пользователей о подключении нового
                     msg.type = user_connected;
                     add_message_to_history = 1;
+
+                    ui_print_user_list(server_ui, users, user_count);
                 }
                 else {
                     // Уведомить пользователя о невозможности его обслуживания
@@ -116,13 +123,15 @@ void* thread_listener(void *arg) {
                         // Уведомить всех пользователей об отсоединении
                         msg.type = user_disconnected;
                         add_message_to_history = 1;
+
+                        ui_print_user_list(server_ui, users, user_count);
                     }
                     else {
-                        fprintf(stderr, "[ERROR] Пользователь с именем '%s' уже отсоединён.\n", msg.user_name);
+                        //printw("[ERROR] Пользователь с именем '%s' уже отсоединён.\n", msg.user_name);
                     }
                 }
                 else {
-                    fprintf(stderr, "[ERROR] Пользователь с именем '%s' не найден.\n", msg.user_name);
+                    //printw("[ERROR] Пользователь с именем '%s' не найден.\n", msg.user_name);
                 }
 
                 break;
@@ -134,16 +143,19 @@ void* thread_listener(void *arg) {
                 keep_listening = 0;
                 break;
             default:
-                printf("[WARN] Было получено сообщение с неверным типом из server_listener_queue.\n");
+                //printw("[WARN] Было получено сообщение с неверным типом из server_listener_queue.\n");
         }
 
         if (add_message_to_history) {
             int is_added = history_add_message(hist, &msg);
-            if (!is_added) {
-                printf("[ERROR] На сервере превышено количество сообщений в истории.\n");
+            if (is_added) {
+                ui_print_chat_history(server_ui, hist);
+            }
+            else {
+                //printw("[ERROR] На сервере превышено количество сообщений в истории.\n");
             }
 
-            printf("%s: %s\n", msg.user_name, msg.text);
+            //printw("%s: %s\n", msg.user_name, msg.text);
         }
 
         // Отправляем оставшиеся сообщения пользователям, которые они ещё не получили
@@ -176,24 +188,48 @@ void* thread_listener(void *arg) {
     return NULL;
 }
 
+static void init_curses() {
+    initscr();
+
+    cbreak();
+    noecho();
+    curs_set(0);
+}
+
+
+
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
-
+    
     // server_listener_queue:
     // ожидает входящие сообщения от пользователей и главного потока сервера
     struct queue_pair server_listener_queue;
     int status = create_queue_pair(SERVER_LISTENER_QUEUE, &server_listener_queue);
     if (status != 0) {
+        fprintf(stderr, "Не удалось создать очередь '%s'.\n", SERVER_LISTENER_QUEUE);
         return 1;
     }
+
+    // Создание визуальной части приложения
+    init_curses();
+    server_ui = chat_ui_create();
+    if (server_ui == NULL) {
+        destroy_queue_pair(&server_listener_queue);
+        endwin();
+
+        fprintf(stderr, "Не удалось создать subwindow для чата.\n");
+        return 2;
+    }
+    touchwin(stdscr);
 
     pthread_t listener_thread;
     pthread_create(&listener_thread, NULL, thread_listener, &server_listener_queue.read_end);
 
-
-    // TODO: use ncurses, wait until 'q' is pressed
-    sleep(15);
-
+    // Главный поток ожидает ввода 'q', после которого работа сервера завершается
+    int ch;
+    do {
+        ch = wgetch(server_ui->prompt_wnd);
+    } while (ch != 'q');
 
     // Посылаем сообщение потоку listener_thread о завершении сеанса
     struct message msg;
@@ -204,5 +240,7 @@ int main() {
 
     // Cleanup
     destroy_queue_pair(&server_listener_queue);
+    chat_ui_free(server_ui);
+    endwin();
     return 0;
 }
