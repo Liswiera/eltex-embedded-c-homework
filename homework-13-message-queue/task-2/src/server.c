@@ -39,7 +39,7 @@ void* thread_listener(void *arg) {
     struct message msg; // структура для получения/отправки сообщений
     int keep_listening = 1;
     
-    ui_print_exit_prompt(server_ui);
+    
 
     while (keep_listening) {
         ssize_t bytes_read = mq_receive(server_listener_queue, (char*)&msg, MQ_MSGSIZE, NULL);
@@ -226,6 +226,8 @@ int main() {
     pthread_create(&listener_thread, NULL, thread_listener, &server_listener_queue.read_end);
 
     // Главный поток ожидает ввода 'q', после которого работа сервера завершается
+    ui_print_exit_prompt(server_ui);
+    
     int ch;
     do {
         ch = wgetch(server_ui->prompt_wnd);

@@ -82,7 +82,26 @@ void ui_print_chat_history(struct chat_ui *ui, struct history *hist) {
     for (size_t msg_id = msg_start_id; msg_id < hist->msg_count; msg_id++) {
         const struct message *msg = history_get_message(hist, msg_id);
 
-        snprintf(line_buf, LINE_BUF_CAPACITY - 1, "%s: %s", msg->user_name, msg->text);
+        switch (msg->type) {
+            case user_connected:
+                snprintf(line_buf, LINE_BUF_CAPACITY - 1, "%s has joined the chat!", msg->user_name);
+                break;
+            case user_disconnected:
+                snprintf(line_buf, LINE_BUF_CAPACITY - 1, "%s has left the chat.", msg->user_name);
+                break;
+            case message_from_user:
+                snprintf(line_buf, LINE_BUF_CAPACITY - 1, "%s: %s", msg->user_name, msg->text);
+                break;
+            case message_from_server:
+                snprintf(line_buf, LINE_BUF_CAPACITY - 1, "[SERVER] %s", msg->text);
+                break;
+            case session_ended:
+                snprintf(line_buf, LINE_BUF_CAPACITY - 1, "Server has shut down.");
+                break;
+            default:
+                line_buf[0] = '\0';
+        }
+        
         mvwaddnstr(ui->chat_history_wnd, line_y_coord, 0, line_buf, get_chat_width());
         wprintw(ui->chat_history_wnd, "\n");
 
@@ -122,6 +141,14 @@ void ui_print_exit_prompt(struct chat_ui *ui) {
     wclear(ui->prompt_wnd);
 
     mvwaddnstr(ui->prompt_wnd, 0, 0, "Press 'q' to exit", get_screen_width());
+
+    wrefresh(ui->prompt_wnd);
+}
+
+void ui_print_text_prompt(struct chat_ui *ui) {
+    wclear(ui->prompt_wnd);
+
+    mvwaddnstr(ui->prompt_wnd, 0, 0, "Submit your message or type 'exit' to quit", get_screen_width());
 
     wrefresh(ui->prompt_wnd);
 }

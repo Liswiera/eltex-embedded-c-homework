@@ -114,8 +114,6 @@ void* thread_listener(void *arg) {
 static void init_curses() {
     initscr();
 
-    cbreak();
-    noecho();
     curs_set(0);
 }
 
@@ -171,13 +169,25 @@ int main(int argc, char** argv) {
     pthread_create(&listener_thread, NULL, thread_listener, &user_listener_queue.read_end);
 
     
-    int ch;
-    do {
-        ch = wgetch(client_ui->prompt_wnd);
+    char input_buf[BUF_LEN];
+    while (1) {
+        ui_print_text_prompt(client_ui);
 
-        message_set(&msg, message_from_user, user_name, "Message sent.");
-        mq_send(server_queue, (char*)&msg, MQ_MSGSIZE, 0);
-    } while (ch != 'q');
+        wmove(client_ui->prompt_wnd, 1, 0);
+        wgetnstr(client_ui->prompt_wnd, input_buf, BUF_LEN - 1);
+
+        if (strlen(input_buf) == 0) {
+            continue;
+        }
+
+        if (strcmp(input_buf, "exit") == 0) {
+            break;
+        }
+        else {
+            message_set(&msg, message_from_user, user_name, input_buf);
+            mq_send(server_queue, (char*)&msg, MQ_MSGSIZE, 0);
+        }
+    }
 
     if (connected_to_server) {
         // Посылаем сообщение потоку listener_thread о завершении сеанса
@@ -189,7 +199,7 @@ int main(int argc, char** argv) {
     }
 
     pthread_join(listener_thread, NULL);
-
+    
     // Cleanup
     mq_close(server_queue);
     destroy_queue_pair(&user_listener_queue);
