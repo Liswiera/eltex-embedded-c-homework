@@ -4,10 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-void user_signal_handler(int signo, siginfo_t *info, void *context) {
-    printf("Был получен сигнал SIGUSR1.\n");
-}
-
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
 
