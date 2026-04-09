@@ -41,6 +41,8 @@ int main() {
         unlink(SOCKET_PATH);
         return 3;
     }
+
+    printf("Ожидаю соединение от клиента...\n");
     
     int client_fd = accept(listener_fd, NULL, NULL);
     if (client_fd == -1) {
