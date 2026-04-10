@@ -3,7 +3,6 @@
 
 #define LISTEN_BACKLOG 4
 #define MESSAGE "Hi!"
-#define BUF_LEN 32
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "ru_RU.UTF-8");

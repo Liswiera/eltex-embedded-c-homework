@@ -1,9 +1,7 @@
-#include <arpa/inet.h>
 #include <locale.h>
 #include "common.h"
 
 #define MESSAGE "Hello!"
-#define BUF_LEN 32
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "ru_RU.UTF-8");
