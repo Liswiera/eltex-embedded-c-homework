@@ -1,15 +1,8 @@
 #include <locale.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
+#include "common.h"
 
-#define SOCKET_PATH "/tmp/homework-16-local-stream"
 #define LISTEN_BACKLOG 4
 #define MESSAGE "Hi!"
-#define BUF_LEN 32
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
@@ -53,25 +46,8 @@ int main() {
         return 4;
     }
 
-    // Принимаем сообщение от клиента
-    char buf[BUF_LEN];
-    int bytes_read = recv(client_fd, buf, BUF_LEN - 1, 0);
-    if (bytes_read != -1) {
-        buf[bytes_read] = '\0';
-        printf("Было получено сообщение от клиента: '%s'.\n", buf);
-    }
-    else {
-        fprintf(stderr, "Не удалось принять сообщение от клиента.\n");
-    }
-
-    // Отправляем сообщение клиенту
-    int bytes_sent = send(client_fd, MESSAGE, strlen(MESSAGE), 0);
-    if (bytes_sent != -1) {
-        printf("Клиенту было отправлено сообщение '%s'.\n", MESSAGE);
-    }
-    else {
-        fprintf(stderr, "Не удалось отправить сообщение клиенту.\n");
-    }
+    receive_message(client_fd);
+    send_message(client_fd, MESSAGE);
 
     // Cleanup
     close(client_fd);

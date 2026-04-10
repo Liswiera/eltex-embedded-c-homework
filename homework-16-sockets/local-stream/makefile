@@ -5,8 +5,8 @@ BINDIR := bin
 OBJDIR := obj
 SRCDIR := src
 
-OBJSERVER := $(addprefix $(OBJDIR)/, server.o)
-OBJCLIENT := $(addprefix $(OBJDIR)/, client.o)
+OBJSERVER := $(addprefix $(OBJDIR)/, server.o common.o)
+OBJCLIENT := $(addprefix $(OBJDIR)/, client.o common.o)
 
 VPATH := $(SRCDIR)
 
