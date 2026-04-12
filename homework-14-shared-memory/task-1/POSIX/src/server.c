@@ -3,7 +3,7 @@
 
 #define MESSAGE "Hi!"
 #define MESSAGE_LEN strlen(MESSAGE)
-#define BUF_LEN (SHM_MSGSIZE + 1)
+#define BUF_LEN (MSGSIZE + 1)
 
 int main() {
     setlocale(LC_ALL, "ru_RU.UTF-8");
@@ -25,27 +25,27 @@ int main() {
         return 2;
     }
 
-    struct message_cell *cells = mmap(NULL, MSG_CELL_SIZE * 2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (cells == MAP_FAILED) {
-        fprintf(stderr, "Не удалось отобразить структуру сообщения в разделяемую память.\n");
+    struct message_duplex *duplex = mmap(NULL, sizeof(struct message_duplex), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (duplex == MAP_FAILED) {
+        fprintf(stderr, "Не удалось отобразить структуру коммуникации между клиентом и сервером в разделяемую память.\n");
 
         close(fd);
         shm_unlink(SHM_PATH);
         return 3;
     }
 
-    message_cell_init(&cells[SERVER_ID]);
-    message_cell_init(&cells[CLIENT_ID]);
+    msg_duplex_init(duplex);
 
     printf("Ожидаю сообщение от клиента...\n");
 
     // Передача сообщений между клиентом и сервером
     char buf[BUF_LEN];
-    receive_string(&cells[SERVER_ID], buf, BUF_LEN);
-    send_string(&cells[CLIENT_ID], MESSAGE, MESSAGE_LEN);
+    msg_cell_recv_string(&duplex->server, buf, BUF_LEN);
+    msg_cell_send_string(&duplex->client, MESSAGE, MESSAGE_LEN);
 
     // Cleanup
-    munmap(cells, MSG_CELL_SIZE * 2);
+    msg_duplex_destroy(duplex);
+    munmap(duplex, sizeof(struct message_duplex));
     close(fd);
     shm_unlink(SHM_PATH);
     return 0;
