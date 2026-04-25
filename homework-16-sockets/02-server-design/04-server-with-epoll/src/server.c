@@ -49,12 +49,46 @@ int main(int argc, char **argv) {
         return 5;
     }
 
-    
+
+    // Привязываем сокеты к портам
+    my_addr.sin_port = htons(udp_port);
+    int udp_bind_status = bind(udp_listener_fd, (struct sockaddr*)&my_addr, sizeof(my_addr));
+    if (udp_bind_status == -1) {
+        fprintf(stderr, "Не удалось привязать адрес к UDP сокету.\n");
+
+        close(tcp_listener_fd);
+        close(udp_listener_fd);
+        return 6;
+    }
+
+    my_addr.sin_port = htons(tcp_port);
+    int tcp_bind_status = bind(tcp_listener_fd, (struct sockaddr*)&my_addr, sizeof(my_addr));
+    if (tcp_bind_status == -1) {
+        fprintf(stderr, "Не удалось привязать адрес к TCP сокету.\n");
+
+        close(tcp_listener_fd);
+        close(udp_listener_fd);
+        return 7;
+    }
+
+    int tcp_listen_status = listen(tcp_listener_fd, LISTEN_BACKLOG);
+    if (tcp_listen_status == -1) {
+        fprintf(stderr, "Не удалось сделать сокет прослушиваемым.\n");
+
+        close(tcp_listener_fd);
+        close(udp_listener_fd);
+        return 8;
+    }
+
+
     // Создаём epoll и привязываем к нему дескрипторы TCP и UDP сокетов
     int epoll_fd = epoll_create1(0);
     if (epoll_fd == -1) {
         fprintf(stderr, "Не удалось создать epoll.\n");
-        return 6;
+
+        close(tcp_listener_fd);
+        close(udp_listener_fd);
+        return 9;
     }
 
     struct epoll_event udp_event;
@@ -67,37 +101,6 @@ int main(int argc, char **argv) {
 
     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, udp_listener_fd, &udp_event);
     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tcp_listener_fd, &tcp_event);
-    
-
-    // Привязываем сокеты к портам
-    my_addr.sin_port = htons(udp_port);
-    int udp_bind_status = bind(udp_listener_fd, (struct sockaddr*)&my_addr, sizeof(my_addr));
-    if (udp_bind_status == -1) {
-        fprintf(stderr, "Не удалось привязать адрес к UDP сокету.\n");
-
-        close(tcp_listener_fd);
-        close(udp_listener_fd);
-        return 7;
-    }
-
-    my_addr.sin_port = htons(tcp_port);
-    int tcp_bind_status = bind(tcp_listener_fd, (struct sockaddr*)&my_addr, sizeof(my_addr));
-    if (tcp_bind_status == -1) {
-        fprintf(stderr, "Не удалось привязать адрес к TCP сокету.\n");
-
-        close(tcp_listener_fd);
-        close(udp_listener_fd);
-        return 8;
-    }
-
-    int tcp_listen_status = listen(tcp_listener_fd, LISTEN_BACKLOG);
-    if (tcp_listen_status == -1) {
-        fprintf(stderr, "Не удалось сделать сокет прослушиваемым.\n");
-
-        close(tcp_listener_fd);
-        close(udp_listener_fd);
-        return 9;
-    }
 
 
     printf("Ожидаю сообщения от клиентов...\n");
