@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
     struct sockaddr_in my_addr;
     memset(&my_addr, 0, sizeof(my_addr));
     my_addr.sin_family = AF_INET;
+    my_addr.sin_addr.s_addr = INADDR_ANY;
     my_addr.sin_port = htons(port);
 
     int bind_status = bind(socket_fd, (struct sockaddr*)&my_addr, sizeof(my_addr));
