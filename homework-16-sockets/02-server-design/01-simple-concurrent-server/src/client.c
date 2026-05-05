@@ -1,7 +1,7 @@
 #include <locale.h>
 #include "common.h"
 
-#define MESSAGE "Hello!"
+#define MESSAGE "time"
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "ru_RU.UTF-8");

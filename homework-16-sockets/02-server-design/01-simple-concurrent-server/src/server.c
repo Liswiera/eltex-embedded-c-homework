@@ -1,6 +1,7 @@
 #include <locale.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
 #include "common.h"
 
 #define LISTEN_BACKLOG 4
@@ -19,6 +20,20 @@ static void sigchld_handler(int sig) {
     errno = saved_errno;
 }
 
+static void get_local_time(char* buf) {
+    time_t t;
+    struct tm timeinfo;
+
+    t = time(NULL);
+    localtime_r(&t, &timeinfo);
+    asctime_r(&timeinfo, buf);
+
+    size_t len = strlen(buf);
+    if (len > 0) {
+        buf[len - 1] = '\0';
+    }
+}
+
 static void handle_request(int client_fd) {
     char buf[BUF_SIZE + 1];
     ssize_t bytes_read;
@@ -26,13 +41,16 @@ static void handle_request(int client_fd) {
 
     while ((bytes_read = recv(client_fd, buf, BUF_SIZE, 0)) > 0) {
         buf[bytes_read] = '\0';
-        printf("[PID=%d]Получено сообщение: %s\n", worker_pid, buf);
+        printf("[PID=%d] Получено сообщение: %s\n", worker_pid, buf);
         
-        ssize_t bytes_written = send(client_fd, MESSAGE, strlen(MESSAGE), 0);
+        char time_buf[BUF_SIZE];
+        get_local_time(time_buf);
+        ssize_t bytes_written = send(client_fd, time_buf, strlen(time_buf), 0);
         if (bytes_written == -1) {
             fprintf(stderr, "[PID=%d] Не удалось отправить клиенту сообщение.\n", worker_pid);
             break;
         }
+        printf("[PID=%d] Отправлено сообщение: %s\n", worker_pid, time_buf);
     }
 }
 
@@ -94,6 +112,7 @@ int main(int argc, char **argv) {
         socklen_t client_addr_len = sizeof(client_addr);
 
         int client_fd = accept(listener_fd, (struct sockaddr*)&client_addr, &client_addr_len);
+
         if (client_fd == -1) {
             fprintf(stderr, "Не удалось соединиться с клиентом.\n");
             continue;
@@ -113,7 +132,7 @@ int main(int argc, char **argv) {
             default:
                 // Родительский процесс
                 char ip_buf[INET_ADDRSTRLEN];
-                const char *status = inet_ntop(AF_INET, &client_addr, ip_buf, client_addr_len);
+                const char *status = inet_ntop(AF_INET, &client_addr.sin_addr, ip_buf, client_addr_len);
                 if (status == NULL) {
                     ip_buf[0] = '\0';
                 }
