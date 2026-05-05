@@ -48,7 +48,9 @@ void* worker_thread(void *arg) {
                 fprintf(stderr, "[THREAD #%d] Не удалось отправить клиенту сообщение.\n", wrk->id);
                 break;
             }
-            printf("[THREAD #%d] Отправлено сообщение: %s\n", wrk->id, time_buf);
+            else {
+                printf("[THREAD #%d] Отправлено сообщение: %s\n", wrk->id, time_buf);
+            }
         }
 
         // Закрываем декскриптор клиента и сообщаем главному потоку о доступности обслуживать нового клиента

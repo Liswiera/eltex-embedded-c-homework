@@ -1,7 +1,7 @@
 #include <locale.h>
 #include "common.h"
 
-#define MESSAGE "Hello!"
+#define MESSAGE "time"
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "ru_RU.UTF-8");
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     }
 
     send_message_to(server_fd, MESSAGE, &server_addr, sizeof(server_addr));
-
+    receive_message_from(server_fd, NULL, NULL);
 
     // Cleanup
     close(server_fd);

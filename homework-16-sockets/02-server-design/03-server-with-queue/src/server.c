@@ -4,11 +4,24 @@
 #include "worker.h"
 
 #define LISTEN_BACKLOG 4
-#define MESSAGE "Hi!"
 #define BUF_SIZE 64
 #define WORKER_COUNT 3
 
 #define SERVER_QUEUE_NAME "/homework-16-02-03-server-queue"
+
+static void get_local_time(char* buf) {
+    time_t t;
+    struct tm timeinfo;
+
+    t = time(NULL);
+    localtime_r(&t, &timeinfo);
+    asctime_r(&timeinfo, buf);
+
+    size_t len = strlen(buf);
+    if (len > 0) {
+        buf[len - 1] = '\0';
+    }
+}
 
 static void set_queue_creat_attributes(struct mq_attr *attributes) {
     attributes->mq_maxmsg = MQ_MAXMSG;
@@ -38,11 +51,17 @@ void* worker_thread(void *arg) {
         // и обрабатываем её
         printf("[THREAD #%d] Получено сообщение: %s\n", wrk->id, msg.contents);
 
-        ssize_t bytes_written = sendto(worker_sock_fd, MESSAGE, strlen(MESSAGE), 0, (struct sockaddr*)&msg.client, sizeof(msg.client));
+        char time_buf[BUF_SIZE];
+        get_local_time(time_buf);
+        ssize_t bytes_written = sendto(worker_sock_fd, time_buf, strlen(time_buf), 0, (struct sockaddr*)&msg.client, sizeof(msg.client));
         if (bytes_written == -1) {
             fprintf(stderr, "[THREAD #%d] Не удалось отправить клиенту сообщение.\n", wrk->id);
             continue;
         }
+        else {
+            printf("[THREAD #%d] Отправлено сообщение: %s\n", wrk->id, time_buf);
+        }
+        
     }
 
     return NULL;

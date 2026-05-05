@@ -31,7 +31,7 @@ ssize_t send_message(int fd, const char *message) {
         printf("Было отправлено сообщение '%s' (TCP).\n", message);
     }
     else {
-        fprintf(stderr, "Не удалось отправить сообщение '%s'.\n", message);
+        fprintf(stderr, "Не удалось отправить сообщение '%s' (TCP).\n", message);
     }
 
     return bytes_sent;
@@ -46,7 +46,7 @@ ssize_t receive_message(int fd) {
         printf("Было получено сообщение: '%s' (TCP).\n", buf);
     }
     else {
-        fprintf(stderr, "Не удалось принять сообщение.\n");
+        fprintf(stderr, "Не удалось принять сообщение (TCP).\n");
     }
 
     return bytes_read;
@@ -58,7 +58,7 @@ ssize_t send_message_to(int fd, const char *message, const struct sockaddr_in *a
         printf("Было отправлено сообщение '%s' (UDP).\n", message);
     }
     else {
-        fprintf(stderr, "Не удалось отправить сообщение '%s'.\n", message);
+        fprintf(stderr, "Не удалось отправить сообщение '%s' (UDP).\n", message);
     }
 
     return bytes_sent;
@@ -73,7 +73,7 @@ ssize_t receive_message_from(int fd, struct sockaddr_in *addr, socklen_t *addr_l
         printf("Было получено сообщение: '%s' (UDP).\n", buf);
     }
     else {
-        fprintf(stderr, "Не удалось принять сообщение.\n");
+        fprintf(stderr, "Не удалось принять сообщение (UDP).\n");
     }
 
     return bytes_read;

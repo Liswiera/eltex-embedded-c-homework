@@ -49,7 +49,9 @@ static void handle_request(int client_fd) {
             fprintf(stderr, "[PID=%d] Не удалось отправить клиенту сообщение.\n", worker_pid);
             break;
         }
-        printf("[PID=%d] Отправлено сообщение: %s\n", worker_pid, time_buf);
+        else {
+            printf("[PID=%d] Отправлено сообщение: %s\n", worker_pid, time_buf);
+        }
     }
 }
 

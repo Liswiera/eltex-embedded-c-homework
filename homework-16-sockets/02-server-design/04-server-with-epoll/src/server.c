@@ -1,16 +1,64 @@
 #include <locale.h>
 #include <sys/epoll.h>
+#include <time.h>
 #include "common.h"
 
 #define LISTEN_BACKLOG 4
-#define MESSAGE "Hi!"
 #define BUF_SIZE 64
 #define WORKER_COUNT 3
+
+static void get_local_time(char* buf) {
+    time_t t;
+    struct tm timeinfo;
+
+    t = time(NULL);
+    localtime_r(&t, &timeinfo);
+    asctime_r(&timeinfo, buf);
+
+    size_t len = strlen(buf);
+    if (len > 0) {
+        buf[len - 1] = '\0';
+    }
+}
+
+void udp_query(int client_fd) {
+    struct sockaddr_in client_udp_addr;
+    socklen_t client_udp_addr_len = sizeof(client_udp_addr);
+
+    ssize_t bytes_read = receive_message_from(client_fd, &client_udp_addr, &client_udp_addr_len);
+    if (bytes_read > 0) {
+        char time_buf[BUF_SIZE];
+        get_local_time(time_buf);
+
+        sendto(client_fd, time_buf, strlen(time_buf), 0, (struct sockaddr*)&client_udp_addr, sizeof(client_udp_addr));
+    }
+}
+
+void tcp_query(int listener_fd) {
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
+
+    int client_fd = accept(listener_fd, (struct sockaddr*)&client_addr, &client_addr_len);
+    if (client_fd == -1) {
+        fprintf(stderr, "Не удалось принять клиента (TCP).\n");
+        return;
+    }
+
+    ssize_t bytes_read = receive_message(client_fd);
+    if (bytes_read > 0) {
+        char time_buf[BUF_SIZE];
+        get_local_time(time_buf);
+
+        send(client_fd, time_buf, strlen(time_buf), 0);
+    }
+
+    close(client_fd);
+}
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "ru_RU.UTF-8");
 
-    if (argc < 2) {
+    if (argc < 3) {
         printf("Usage: server [TCP_PORT] [UDP_PORT]\n");
         return 1;
     }
@@ -116,34 +164,16 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        ssize_t bytes_read;
         if (event.events & EPOLLIN) {
             int ready_fd = event.data.fd;
 
             if (ready_fd == tcp_listener_fd) {
                 // Было получено событие от дескриптора по TCP
-                struct sockaddr_in client_addr;
-                socklen_t client_addr_len = sizeof(client_addr);
-
-                int client_fd = accept(tcp_listener_fd, (struct sockaddr*)&client_addr, &client_addr_len);
-                if (client_fd == -1) {
-                    fprintf(stderr, "Не удалось принять клиента (TCP).\n");
-                    continue;
-                }
-
-                bytes_read = receive_message(client_fd);
-                if (bytes_read == -1) {
-                    fprintf(stderr, "Не удалось принять сообщение от клиента (TCP).\n");
-                }
-
-                close(client_fd);
+                tcp_query(tcp_listener_fd);
             }
             else if (ready_fd == udp_listener_fd) {
                 // Было получено событие от дескриптора по UDP
-                bytes_read = receive_message_from(udp_listener_fd, NULL, NULL);
-                if (bytes_read == -1) {
-                    fprintf(stderr, "Не удалось принять сообщение от клиента (UDP).\n");
-                }
+                udp_query(udp_listener_fd);
             }
         }
     }
