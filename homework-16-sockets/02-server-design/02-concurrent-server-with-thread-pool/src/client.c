@@ -1,7 +1,7 @@
 #include <locale.h>
 #include "common.h"
 
-#define MESSAGE "Hello!"
+#define MESSAGE "time"
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "ru_RU.UTF-8");
@@ -44,18 +44,9 @@ int main(int argc, char **argv) {
         return 5;
     }
 
-    // TODO: ADD NCURSES
-    while (1) {
-        if (send_message(server_fd, MESSAGE) == -1) {
-            break;
-        }
-        sleep(1);
 
-        if (receive_message(server_fd) == -1) {
-            break;
-        }
-        sleep(1);
-    }
+    send_message(server_fd, MESSAGE); 
+    receive_message(server_fd);
 
 
     // Cleanup

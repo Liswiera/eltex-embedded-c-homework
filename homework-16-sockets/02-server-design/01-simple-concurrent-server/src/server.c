@@ -5,7 +5,6 @@
 #include "common.h"
 
 #define LISTEN_BACKLOG 4
-#define MESSAGE "Hi!"
 #define BUF_SIZE 64
 
 static void sigchld_handler(int sig) {

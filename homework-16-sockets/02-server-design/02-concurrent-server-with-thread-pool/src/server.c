@@ -1,11 +1,25 @@
 #include <locale.h>
+#include <time.h>
 #include "common.h"
 #include "worker.h"
 
 #define LISTEN_BACKLOG 4
-#define MESSAGE "Hi!"
 #define BUF_SIZE 64
 #define WORKER_COUNT 3
+
+static void get_local_time(char* buf) {
+    time_t t;
+    struct tm timeinfo;
+
+    t = time(NULL);
+    localtime_r(&t, &timeinfo);
+    asctime_r(&timeinfo, buf);
+
+    size_t len = strlen(buf);
+    if (len > 0) {
+        buf[len - 1] = '\0';
+    }
+}
 
 pthread_mutex_t counter_mutex = PTHREAD_MUTEX_INITIALIZER;
 int free_worker_count = 0;
@@ -25,13 +39,16 @@ void* worker_thread(void *arg) {
         ssize_t bytes_read;
         while ((bytes_read = recv(wrk->client_fd, buf, BUF_SIZE, 0)) > 0) {
             buf[bytes_read] = '\0';
-            printf("[THREAD #%d]Получено сообщение: %s\n", wrk->id, buf);
+            printf("[THREAD #%d] Получено сообщение: %s\n", wrk->id, buf);
             
-            ssize_t bytes_written = send(wrk->client_fd, MESSAGE, strlen(MESSAGE), 0);
+            char time_buf[BUF_SIZE];
+            get_local_time(time_buf);
+            ssize_t bytes_written = send(wrk->client_fd, time_buf, strlen(time_buf), 0);
             if (bytes_written == -1) {
                 fprintf(stderr, "[THREAD #%d] Не удалось отправить клиенту сообщение.\n", wrk->id);
                 break;
             }
+            printf("[THREAD #%d] Отправлено сообщение: %s\n", wrk->id, time_buf);
         }
 
         // Закрываем декскриптор клиента и сообщаем главному потоку о доступности обслуживать нового клиента

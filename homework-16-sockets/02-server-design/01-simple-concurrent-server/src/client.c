@@ -44,10 +44,10 @@ int main(int argc, char **argv) {
         return 5;
     }
 
-    // TODO: ADD NCURSES
 
     send_message(server_fd, MESSAGE);
     receive_message(server_fd);
+    
 
     // Cleanup
     close(server_fd);
