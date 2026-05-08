@@ -70,7 +70,7 @@ int send_message_to_udp_raw(int fd, const struct sockaddr *dest_addr, socklen_t 
     return bytes_sent;
 }
 
-int send_message_to_inet_udp_raw(int fd, const struct sockaddr *dest_addr, socklen_t addrlen, const struct inet_udp_packet *packet) {
+int send_message_to_inet_udp_raw(int fd, const struct sockaddr *dest_addr, socklen_t addrlen, const struct inet_udp_datagram *packet) {
     int bytes_sent = sendto(fd, packet, ntohs(packet->inet_hdr.len), 0, dest_addr, addrlen);
     
     if (bytes_sent != -1) {
@@ -100,7 +100,7 @@ int receive_message_from(int fd, struct sockaddr* restrict src_addr, socklen_t* 
 }
 
 ssize_t receive_message_from_udp_raw(int fd, uint16_t port, struct sockaddr* restrict src_addr, socklen_t* restrict addrlen) {
-    struct inet_udp_packet net_packet;
+    struct inet_udp_datagram net_packet;
 
     while (1) {
         ssize_t bytes_read = recvfrom(fd, &net_packet, sizeof(net_packet), 0, src_addr, addrlen);

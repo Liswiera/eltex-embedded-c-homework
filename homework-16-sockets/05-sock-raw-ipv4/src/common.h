@@ -33,7 +33,7 @@ struct inet_header {
     struct in_addr dst_addr;
 };
 
-struct inet_udp_packet {
+struct inet_udp_datagram {
     struct inet_header inet_hdr;
     struct udp_packet udp_segment;
 };
@@ -44,6 +44,6 @@ int is_number(const char *str);
 int port_str_to_val(const char *port_str, uint16_t *port_out);
 int send_message_to(int fd, const struct sockaddr *dest_addr, socklen_t addrlen, const char *message);
 int send_message_to_udp_raw(int fd, const struct sockaddr *dest_addr, socklen_t addrlen, const struct udp_packet *packet);
-int send_message_to_inet_udp_raw(int fd, const struct sockaddr *dest_addr, socklen_t addrlen, const struct inet_udp_packet *packet);
+int send_message_to_inet_udp_raw(int fd, const struct sockaddr *dest_addr, socklen_t addrlen, const struct inet_udp_datagram *packet);
 int receive_message_from(int fd, struct sockaddr* restrict src_addr, socklen_t* restrict addrlen);
 ssize_t receive_message_from_udp_raw(int fd, uint16_t port, struct sockaddr* restrict src_addr, socklen_t* restrict addrlen);
