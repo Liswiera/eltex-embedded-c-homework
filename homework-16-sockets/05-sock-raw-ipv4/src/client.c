@@ -54,8 +54,6 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    printf("Inet header size: %zu\n", sizeof(struct inet_header));
-
     struct inet_udp_datagram datagram;
     struct inet_header *header = &datagram.inet_hdr;
     header->ver_ihl = (4 << 4) | 5; // IPv4 | 5 32-bit words in the header (20 bytes)
