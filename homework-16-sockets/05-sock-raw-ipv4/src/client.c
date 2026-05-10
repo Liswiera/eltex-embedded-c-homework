@@ -57,9 +57,9 @@ int main(int argc, char** argv) {
     struct inet_udp_datagram datagram;
     struct inet_header *header = &datagram.inet_hdr;
     header->ver_ihl = (4 << 4) | 5; // IPv4 | 5 32-bit words in the header (20 bytes)
-    header->ds = 0; // TODO
+    header->ds = 0;
     header->len = htons(sizeof(struct inet_header) + 8 + MESSAGE_LEN);
-    header->identification = htons(0); // TODO
+    header->identification = htons(0);
     header->flags_offset = htons(0b010 << 13); // Don't fragment
     header->ttl = 255;
     header->protocol = 17; // UDP
