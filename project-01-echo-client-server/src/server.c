@@ -54,6 +54,12 @@ int main(int argc, char** argv) {
         return 3;
     }
 
+    // List is used because of the low-scale usage of the program
+    // (maybe tens of simlutaneously connected users at most)
+    // while also making it easier to test and implement the collection
+    //
+    // Search complexity: O(n)
+    // Insert complexity: O(1)
     struct client_list list;
     client_list_init(&list);
 
